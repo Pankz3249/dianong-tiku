@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1f4e79">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="电工题库">
+<title>黑龙江省机场集团电工技能大赛 · 理论题库练习软件</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{
+    --primary:#1f4e79; --accent:#2e75b6; --ok:#2e7d32; --err:#c62828;
+    --bg:#eef2f7; --card:#ffffff; --ink:#1f2933; --muted:#6b7885; --line:#d9e2ea;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:"Microsoft YaHei","PingFang SC","Helvetica Neue",Arial,sans-serif;
+    background:var(--bg);color:var(--ink);}
+  header{background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;padding:22px 28px;}
+  header h1{margin:0 0 6px;font-size:22px;letter-spacing:.5px;}
+  header p{margin:0;opacity:.9;font-size:13px;}
+  .wrap{max-width:1000px;margin:0 auto;padding:18px;}
+  .card{background:var(--card);border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.06);
+    padding:20px 22px;margin-bottom:16px;}
+  .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px;}
+  .tab{padding:8px 16px;border-radius:8px 8px 0 0;background:#dbe4ee;color:var(--primary);
+    cursor:pointer;font-weight:600;border:none;font-size:14px;}
+  .tab.active{background:var(--card);color:var(--primary);box-shadow:0 -2px 6px rgba(0,0,0,.05);}
+  .meta{color:var(--muted);font-size:13px;}
+  .q-title{font-size:16px;font-weight:700;margin:6px 0 12px;line-height:1.6;white-space:pre-wrap;}
+  /* 填空题的下划线占位：显式给宽度，避免空元素被浏览器折叠成零宽度 */
+  .q-title u.blank-u{display:inline-block;min-width:2.8em;height:1.2em;vertical-align:-2px;
+    border-bottom:2px solid var(--accent);margin:0 4px;color:var(--accent);}
+  .opt{border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:6px 0;cursor:pointer;
+    transition:.15s;display:flex;gap:10px;align-items:flex-start;line-height:1.5;}
+  .opt:hover{background:#f4f8fc;border-color:var(--accent);}
+  .opt input{margin-top:3px;}
+  .opt.correct{border-color:var(--ok);background:#e8f5e9;font-weight:600;}
+  .opt.wrong{border-color:var(--err);background:#fdecea;}
+  textarea,input[type=text]{width:100%;border:1px solid var(--line);border-radius:8px;
+    padding:10px 12px;font-size:14px;font-family:inherit;resize:vertical;}
+  textarea:focus,input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(46,117,182,.15);}
+  .btn{background:var(--accent);color:#fff;border:none;padding:9px 18px;border-radius:8px;
+    cursor:pointer;font-size:14px;font-weight:600;}
+  .btn:hover{background:var(--primary);}
+  .btn.ghost{background:#e5eaef;color:var(--primary);}
+  .btn.ghost:hover{background:#d4dce4;}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+  .feedback{margin-top:12px;padding:12px 14px;border-radius:8px;font-size:14px;line-height:1.6;display:none;}
+  .feedback.show{display:block;}
+  .feedback.ok{background:#e8f5e9;color:var(--ok);border:1px solid #c8e6c9;}
+  .feedback.err{background:#fdecea;color:var(--err);border:1px solid #f5c6cb;}
+  .stats{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted);}
+  .stats b{color:var(--primary);}
+  .pill{background:#eef3f8;color:var(--primary);padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600;}
+  .nav-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;margin-top:6px;}
+  .explain{margin-top:8px;padding:10px 12px;background:#f7f9fb;border-left:4px solid var(--accent);
+    border-radius:6px;font-size:13px;line-height:1.6;display:none;}
+  .explain.show{display:block;}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;}
+  .toggle{font-size:13px;color:var(--muted);}
+  .toggle input{vertical-align:middle;}
+  .empty{padding:30px;text-align:center;color:var(--muted);}
+  .footer{text-align:center;color:#9aa7b3;font-size:12px;padding:18px;margin-top:8px;}
+  .cat-list{display:flex;flex-wrap:wrap;gap:8px;}
+  .cat-list .tab{padding:7px 14px;border-radius:8px;}
+  /* 顺序/随机模式切换 */
+  .mode-group{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:13px;}
+  .mode-group button{padding:6px 14px;border:none;background:#fff;color:var(--muted);cursor:pointer;font-weight:600;}
+  .mode-group button.on{background:var(--accent);color:#fff;}
+  .mode-group button:not(.on):hover{background:#f0f5fa;}
+  /* 实操子标签 */
+  .subtabs{display:flex;gap:6px;margin:10px 0 4px;border-bottom:2px solid var(--line);}
+  .subtab{padding:7px 16px;border:none;background:none;color:var(--muted);cursor:pointer;font-weight:600;font-size:14px;border-bottom:3px solid transparent;margin-bottom:-2px;}
+  .subtab.active{color:var(--primary);border-bottom-color:var(--accent);}
+  /* 模拟接线 —— 左右均衡分栏，比例协调 */
+  .wire-wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;}
+  @media (max-width:900px){ .wire-wrap{grid-template-columns:1fr;} }
+  .wire-left{display:flex;flex-direction:column;gap:10px;}
+  .wire-left img{border:1px solid var(--line);border-radius:8px;width:100%;height:auto;background:#fafbfc;display:block;}
+  .wire-left .ref-cap{font-size:12px;color:var(--muted);margin-top:2px;text-align:center;}
+  .wire-right{display:flex;flex-direction:column;min-width:0;}
+  /* canvas 不再内部滚动：高度随端子网格自适应撑开，避免 getBoundingClientRect 受滚动偏移影响导致连线错位/不可见 */
+  .wire-canvas{position:relative;flex:1;border:1px solid var(--line);border-radius:10px;
+    background:#fbfcfe;overflow:visible;user-select:none;padding:14px;}
+  .wire-canvas svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5;}
+  .wire-canvas svg line{pointer-events:stroke;cursor:pointer;}
+  /* 端子区：按元件分组的卡片网格；卡片区整体穿透点击，仅端子本身接收点击，使上层 SVG 连线不被卡片拦截 */
+  .comp-grid{position:relative;z-index:1;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;pointer-events:none;}
+  .comp-grid .comp{pointer-events:auto;}
+  .comp{background:#fff;border:1.5px solid var(--accent);border-radius:8px;padding:8px 10px;
+    box-shadow:0 1px 4px rgba(0,0,0,.06);font-size:12px;}
+  .comp .cname{font-weight:700;color:var(--primary);text-align:center;margin-bottom:5px;font-size:12px;line-height:1.3;}
+  .comp .terms{display:flex;flex-wrap:wrap;gap:4px 8px;justify-content:center;}
+  .term{display:inline-flex;align-items:center;gap:4px;padding:2px 4px;border-radius:6px;cursor:pointer;}
+  .term .dot{display:inline-block;width:13px;height:13px;border-radius:50%;border:1.5px solid #b0b8c0;background:#fff;flex:none;}
+  .term.sel .dot{background:var(--accent);border-color:var(--primary);box-shadow:0 0 0 3px rgba(46,117,182,.25);}
+  .term.ok .dot{border-color:var(--ok);background:#e8f5e9;}
+  .term.bad .dot{border-color:var(--err);background:#fdecea;}
+  .tlabel{font-size:11px;color:var(--muted);}
+  .wire-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px;}
+  .wire-msg{font-size:13px;margin-top:8px;min-height:20px;}
+  .wire-msg.ok{color:var(--ok);font-weight:600;}
+  .wire-msg.err{color:var(--err);font-weight:600;}
+  .wire-section-title{font-size:12px;font-weight:700;color:var(--primary);margin:6px 2px 2px;letter-spacing:.5px;}
+  /* 分组着色连线 */
+  .wire-canvas svg line.wl-main{stroke:#d35400;stroke-width:2.2;}      /* 主回路 橙 */
+  .wire-canvas svg line.wl-ctrl{stroke:#2e75b6;stroke-width:2.2;}      /* 控制回路 蓝 */
+  .wire-canvas svg line.wl-self{stroke:#7d3c98;stroke-width:2.2;}     /* 自锁/互锁 紫 */
+  .wire-canvas svg line.wl-user{stroke:#2e75b6;stroke-width:2.2;}      /* 用户自连 蓝 */
+  .wire-canvas svg line.wl-wrong{stroke:#c62828;stroke-width:2.2;stroke-dasharray:5 3;}
+  .wire-legend{display:inline-flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-left:auto;}
+  .wire-legend i{display:inline-block;width:18px;height:3px;vertical-align:middle;margin-right:4px;border-radius:2px;}
+  .wl-dot-main{background:#d35400;} .wl-dot-ctrl{background:#2e75b6;} .wl-dot-self{background:#7d3c98;} .wl-dot-wrong{background:#c62828;}
+  .term .dot.main{border-color:#d35400;} .term .dot.ctrl{border-color:#2e75b6;}
+  .comp .cname .tag{font-size:9px;font-weight:700;padding:1px 5px;border-radius:99px;margin-left:4px;vertical-align:middle;color:#fff;}
+  .comp .cname .tag.main{background:#d35400;} .comp .cname .tag.ctrl{background:#2e75b6;}
+  /* PWA 安装提示 */
+  .install-banner{background:#fff8e1;border:1px solid #f0d36b;border-radius:10px;padding:12px 14px;margin-bottom:14px;
+    font-size:13px;line-height:1.6;display:flex;gap:10px;align-items:flex-start;}
+  .install-banner b{color:#8a6d1b;}
+  .install-banner button{margin-left:auto;flex-shrink:0;}
+  .install-banner .close-x{cursor:pointer;color:#9a8a4f;font-weight:700;margin-left:6px;}
+  /* 错题本 */
+  .wrong-list{display:flex;flex-direction:column;gap:8px;}
+  .wrong-item{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:#fff;}
+  .wrong-item .wi-stem{font-weight:600;font-size:14px;line-height:1.5;margin-bottom:4px;}
+  .wrong-item .wi-meta{font-size:12px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  .wrong-item .wi-ans{font-size:12px;margin-top:4px;color:var(--err);}
+  .wrong-item .wi-ex{font-size:12px;margin-top:3px;color:#55606b;line-height:1.5;}
+  .wrong-item .wi-actions{margin-top:6px;display:flex;gap:6px;}
+  .wrong-item .wi-actions .btn{padding:5px 12px;font-size:12px;}
+  .badge-wrong{background:#fdecea;color:var(--err);padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;}
+  .badge-corr{background:#e8f5e9;color:var(--ok);padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;}
+  /* 同步面板 */
+  .sync-card{border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:#f7f9fb;margin-bottom:14px;}
+  .sync-card h3{margin:0 0 8px;color:var(--primary);font-size:15px;}
+  .sync-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0;}
+  .sync-row label{font-size:13px;color:var(--muted);min-width:90px;}
+  .sync-row input{flex:1;min-width:180px;}
+  .sync-tip{font-size:12px;color:var(--muted);line-height:1.6;margin-top:6px;}
+  .sync-msg{font-size:13px;margin-top:6px;min-height:16px;}
+  .sync-msg.ok{color:var(--ok);} .sync-msg.err{color:var(--err);}
+  .tab.badge::after{content:attr(data-count);display:inline-block;background:var(--err);color:#fff;font-size:10px;
+    border-radius:99px;padding:0 6px;margin-left:6px;vertical-align:middle;display:none;}
+  .tab.badge.has::after{display:inline-block;}
+  /* 收藏本角标：金色，区别于错题本的红色 */
+  #favTab.badge::after{background:#f0a500;}
+  #favTab{border-bottom:3px solid transparent;}
+  #favTab.active{border-bottom-color:#f0a500;}
+
+  /* 题号快速选题面板 */
+  .qgrid-panel{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:12px;background:#f7f9fb;}
+  .qgrid-bar{display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:13px;color:var(--muted);margin-bottom:10px;}
+  .qgrid-legend{display:inline-flex;align-items:center;gap:5px;font-weight:600;}
+  .qgrid-legend b{color:var(--primary);}
+  .qgrid-dot{display:inline-block;width:13px;height:13px;border-radius:50%;vertical-align:-2px;}
+  .qgrid-dot.ok{background:#2e7d32;border:1px solid #2e7d32;}
+  .qgrid-dot.err{background:#c62828;border:1px solid #c62828;}
+  .qgrid-dot.none{background:#e5eaef;border:1px solid #c3cdd6;}
+  .qgrid-sep{color:#c3cdd6;}
+  .qgrid-hint{margin-left:auto;font-size:12px;}
+  .qgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:6px;max-height:260px;overflow-y:auto;}
+  .qgrid .qg-btn{border:1px solid var(--line);border-radius:7px;padding:6px 0;text-align:center;cursor:pointer;
+    font-size:13px;font-weight:600;background:#e5eaef;color:var(--primary);transition:.12s;line-height:1;}
+  .qgrid .qg-btn:hover{filter:brightness(.96);border-color:var(--accent);}
+  .qgrid .qg-btn.ok{background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7;}
+  .qgrid .qg-btn.err{background:#fdecea;color:#c62828;border-color:#ef9a9a;}
+  .qgrid .qg-btn.none{background:#eef2f7;color:#9aa7b3;border-color:#d9e2ea;}
+  .qgrid .qg-btn.cur{outline:2.5px solid var(--accent);box-shadow:0 0 0 2px rgba(46,117,182,.2);}
+  .qgrid .qg-btn.fav{border-color:#f0a500;box-shadow:inset 0 0 0 1px #f0a500;}
+  /* 原文档未标注答案的题：橙色斜纹提示 */
+  .qgrid .qg-btn.noans{background:repeating-linear-gradient(135deg,#fff3e0,#fff3e0 4px,#ffe0b2 4px,#ffe0b2 8px);color:#e65100;}
+  .q-status.qs-noans{background:#fff3e0;color:#e65100;border-color:#ffb74d;}
+  /* 公式编辑器对象渲染成的公式图片：与文字基线对齐、不挤压行距 */
+  .q-formula{display:inline-block;vertical-align:middle;height:1.35em;width:auto;
+    margin:0 2px;padding:0 1px;background:#fff;border-radius:3px;}
+  .qgrid .qg-btn.hid{display:none;}
+  /* 收藏按钮（题头右侧） */
+  .fav-btn{margin-left:8px;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:700;
+    border:1px solid #d9e2ea;background:#fff;color:#9aa7b3;cursor:pointer;vertical-align:2px;}
+  .fav-btn:hover{border-color:#f0a500;color:#d18b00;}
+  .fav-btn.on{background:#fff8e1;border-color:#f0a500;color:#d18b00;}
+  /* 收藏图例星点 */
+  .qgrid-legend.fav{color:#d18b00;}
+  .qg-dot.star{background:none;border:none;color:#f0a500;font-size:13px;line-height:1;width:auto;height:auto;}
+  /* 题目头部历史对错标记 */
+  .q-status{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:700;margin-left:8px;vertical-align:1px;}
+  .q-status.qs-ok{background:#e8f5e9;color:#2e7d32;}
+  .q-status.qs-err{background:#fdecea;color:#c62828;}
+  .q-status.qs-none{background:#eef2f7;color:#9aa7b3;}
+</style>
+</head>
+<body>
+<header>
+  <h1>黑龙江省机场集团电工技能大赛 · 理论题库练习软件</h1>
+  <p>覆盖选择题 / 填空题 / 判断题 · 顺序/随机练习 · 即时判分 · 错题本 · 多端同步 · 可安装为手机 APP</p>
+</header>
+<div class="wrap">
+  <div class="install-banner" id="installBanner" style="display:none;">
+    <div><b>📲 安装为 APP：</b><span id="installBannerText">可将其安装到手机主屏幕，像原生 APP 一样离线使用。</span></div>
+    <button class="btn" id="installBtn">立即安装</button>
+    <span class="close-x" id="installClose" title="关闭">✕</span>
+  </div>
+
+  <div class="sync-card" id="syncCard">
+    <h3>☁️ 多端同步（错题本 + 答题进度）</h3>
+
+    <!-- 同步方式切换：三种任选 -->
+    <div class="sync-row" style="margin-bottom:6px;">
+      <div class="mode-group" id="syncMethodGroup" title="选择同步方式" style="margin:0;">
+        <button data-method="gist" class="on">GitHub Gist</button>
+        <button data-method="gitee">Gitee 仓库</button>
+        <button data-method="file">JSON 文件</button>
+      </div>
+    </div>
+
+    <!-- 方式一：GitHub Gist -->
+    <div id="syncPaneGist">
+      <div class="sync-row">
+        <label for="gistToken">GitHub Token</label>
+        <input type="password" id="gistToken" placeholder="ghp_xxx…（需 gist 权限，仅存本地）">
+      </div>
+      <div class="sync-row">
+        <label for="gistId">Gist ID</label>
+        <input type="text" id="gistId" placeholder="已有同步 gist 的 ID（首次可留空自动新建）">
+      </div>
+      <div class="sync-row">
+        <button class="btn" id="syncUpload">⬆️ 上传到 Gist</button>
+        <button class="btn ghost" id="syncDownload">⬇️ 从 Gist 拉取</button>
+      </div>
+      <div class="sync-tip" style="margin-top:6px;">
+        💡 填入 GitHub Personal Access Token（勾选 <code>gist</code> 权限）与 Gist ID 即可跨设备同步。
+      </div>
+    </div>
+
+    <!-- 方式二：Gitee 仓库（新增） -->
+    <div id="syncPaneGitee" style="display:none;">
+      <div class="sync-row">
+        <label for="giteeToken">Gitee 私人令牌</label>
+        <input type="password" id="giteeToken" placeholder="Gitee 私人令牌（需 projects 权限，仅存本地）">
+      </div>
+      <div class="sync-row">
+        <label for="giteeOwner">用户名</label>
+        <input type="text" id="giteeOwner" placeholder="Gitee 用户名，如 zhangsan">
+      </div>
+      <div class="sync-row">
+        <label for="giteeRepo">仓库名</label>
+        <input type="text" id="giteeRepo" placeholder="存放同步数据的仓库名，如 dianong-sync">
+      </div>
+      <div class="sync-row">
+        <label for="giteePath">文件路径</label>
+        <input type="text" id="giteePath" placeholder="sync.json" value="sync.json">
+      </div>
+      <div class="sync-row">
+        <button class="btn" id="giteeInit">🆕 自动建仓库</button>
+        <button class="btn" id="giteeUpload">⬆️ 上传到 Gitee</button>
+        <button class="btn ghost" id="giteeDownload">⬇️ 从 Gitee 拉取</button>
+      </div>
+      <div class="sync-tip" style="margin-top:6px;">
+        💡 <b>Gitee 同步说明：</b>数据以 <code>sync.json</code> 文件存在你的 Gitee 仓库里。<br>
+        · <b>首次使用</b>点「🆕 自动建仓库」，会自动创建私有仓库并上传初始数据（令牌需勾选 <code>projects</code> 权限）。<br>
+        · <b>日常同步</b>：一端点「⬆️ 上传」，另一端点「⬇️ 拉取」即可。<br>
+        · 令牌获取：Gitee → 设置 → 私人令牌 → 生成新令牌 → 勾选 <code>projects</code>。
+      </div>
+    </div>
+
+    <!-- 方式三：JSON 文件导入导出（三种方式共用） -->
+    <div id="syncPaneFile" style="display:none;">
+      <div class="sync-row">
+        <button class="btn" id="syncExport">⬇️ 导出 JSON 文件</button>
+        <button class="btn ghost" id="syncImport">⬆️ 导入 JSON 文件</button>
+        <input type="file" id="syncFile" accept="application/json" style="display:none;">
+      </div>
+      <div class="sync-tip" style="margin-top:6px;">
+        💡 <b>离线同步（无需账号）：</b>在 A 设备点「导出 JSON」得到文件，用微信/QQ 发到 B 设备，
+        在 B 设备点「导入 JSON」选中该文件即合并。完全不联网、不依赖任何平台。<br>
+        📱 <b>手机安装 APP：</b>Android Chrome 打开会自动提示"安装"；iPhone 请用 Safari 打开 → 点右上角 <b>分享 → 添加到主屏幕</b>。
+      </div>
+    </div>
+
+    <div class="sync-msg" id="syncMsg"></div>
+    <div class="sync-tip" style="margin-top:8px;border-top:1px dashed var(--line);padding-top:8px;">
+      🔒 <b>隐私说明：</b>Token / 令牌仅保存在你本机浏览器的 localStorage 中，
+      本工具只向 GitHub 或 Gitee 官方 API 发送数据，不经过任何第三方服务器。<br>
+      💾 不配置任何同步方式也可以正常使用，数据保存在本机（关掉浏览器再打开仍在）。
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="toolbar">
+      <div class="tabs" id="typeTabs">
+        <button class="tab active" data-type="choice">选择题</button>
+        <button class="tab" data-type="blank">填空题</button>
+        <button class="tab" data-type="judge">判断题</button>
+        <button class="tab" data-type="practice">实操任务书</button>
+        <button class="tab" data-type="wrongbook" id="wrongTab" data-count="0">错题本</button>
+        <button class="tab" data-type="favbook" id="favTab" data-count="0">⭐收藏本</button>
+        <button class="tab" data-type="drill">📝组卷</button>
+      </div>
+      <div class="stats" id="stats"></div>
+      <div class="mode-group" id="modeGroup" title="切换出题顺序">
+        <button data-mode="seq" class="on">按顺序</button>
+        <button data-mode="rand">随机</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="mainCard">
+    <!-- 题目区由 JS 渲染 -->
+  </div>
+
+  <div class="card" id="navCard" style="display:none;">
+    <div class="nav-btns">
+      <div class="row">
+        <button class="btn ghost" id="prevBtn">← 上一题</button>
+        <button class="btn ghost" id="nextBtn">下一题 →</button>
+        <button class="btn ghost" id="resetProg" title="删除当前题型的答题记录（累计进度+本次统计），错题本保留">🗑️ 删除记录</button>
+      </div>
+      <div class="row">
+        <button class="btn ghost" id="randBtn">🎲 随机一题</button>
+        <button class="btn ghost" id="reDrillBtn" style="display:none;" title="回到组卷配置页，重新生成试卷">🔄 重新组卷</button>
+        <button class="btn" id="submitBtn">提交答案</button>
+      </div>
+      <div id="reciteNote" style="display:none;margin-top:8px;padding:8px 12px;border-radius:8px;font-size:12.5px;line-height:1.6;background:#fff8e1;border:1px solid #f0d36b;color:#8a6d00;">
+        🎓 <b>背题模式</b>：点上方「👁 查看答案」即可看答案与解析；<b>不判分、不计入错题本、不影响答题进度</b>，适合快速过题记忆。
+      </div>
+    </div>
+    <div class="meta" style="margin-top:10px;">
+      进度：<span id="progText">-</span>　·　
+      <label class="toggle"><input type="checkbox" id="autoNext"> 答对后自动下一题</label>　·
+      <label class="toggle"><input type="checkbox" id="showAns"> 立即显示答案</label>　·
+      <label class="toggle" title="不作答，随时查看答案与解析；不判分、不计错题、不影响进度"><input type="checkbox" id="reciteMode"> 🎓 背题模式</label>
+      <button class="btn ghost" id="gridToggle" type="button" style="margin-left:auto;padding:6px 12px;font-size:13px;">📑 题号</button>
+    </div>
+    <!-- 快速选题：题号网格（绿=对 红=错 灰=未做，点击即跳转） -->
+    <div class="qgrid-panel" id="qgridPanel" style="display:none;">
+      <div class="qgrid-bar">
+        <span class="qgrid-legend"><i class="qg-dot ok"></i>已对 <b id="qgCountOk">0</b></span>
+        <span class="qgrid-legend"><i class="qg-dot err"></i>错 <b id="qgCountErr">0</b></span>
+        <span class="qgrid-legend"><i class="qg-dot none"></i>未做 <b id="qgCountNone">0</b></span>
+        <span class="qgrid-legend fav"><i class="qg-dot star">★</i>收藏 <b id="qgCountFav">0</b></span>
+        <span class="qgrid-sep">｜</span>
+        <button class="btn ghost" id="qgOnlyWrong" type="button" style="padding:3px 10px;font-size:12px;">只看错题</button>
+        <button class="btn ghost" id="qgOnlyFav" type="button" style="padding:3px 10px;font-size:12px;">⭐只看收藏</button>
+        <button class="btn ghost" id="qgGotoLast" type="button" style="padding:3px 10px;font-size:12px;">📍 上次做到</button>
+        <span class="qgrid-hint">点击题号快速跳转</span>
+      </div>
+      <div class="qgrid" id="qgrid"></div>
+    </div>
+  </div>
+</div>
+<div class="footer">提示：本软件为离线练习工具，数据来源于《理论试题库》与《实操任务书》，供赛前自学使用。<br>
+<span id="verTag" style="color:#c0392b;font-weight:700;">版本加载中…</span>　（看不到「📝组卷」标签时，请点此版本号强制刷新）</div>
+
+<script src="data.js?v=20260924b"></script>
+<script src="app.js?v=20260924b"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function (err) { console.warn('SW 注册失败:', err); });
+    });
+  }
+</script>
+</body>
+</html>

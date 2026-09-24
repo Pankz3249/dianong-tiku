@@ -1,0 +1,19 @@
+{
+  "name": "电工技能大赛理论题库练习软件",
+  "short_name": "电工题库",
+  "description": "黑龙江省机场集团电工技能大赛理论题库练习（选择/填空/判断/实操），支持离线使用、错题本与多端同步。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1f4e79",
+  "theme_color": "#1f4e79",
+  "lang": "zh-CN",
+  "categories": ["education","utility"],
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"},
+    {"src": "icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable"}
+  ]
+}
