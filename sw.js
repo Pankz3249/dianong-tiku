@@ -6,7 +6,7 @@
 // 因为 SW 拦截请求后直接返回了本地缓存，根本没去服务器取新文件。
 // 现在改为：联网时优先取网络最新内容并回填缓存；断网时才回退到缓存。
 const APP_PREFIX = 'dianong_tiku_';
-const VERSION = 'v17';
+const VERSION = 'dianong_v2_0';
 const CACHE_NAME = APP_PREFIX + VERSION;
 // ⚠️ 全部使用【相对路径】：部署到 Gitee Pages / GitHub Pages 时站点位于子目录
 //    （如 https://用户名.gitee.io/仓库名/），若写绝对路径 '/' 会缓存失败。

@@ -19,6 +19,10 @@
   // userAns: Map<type, Map<origIdx, userAnswer>>  记录每道题你当时选了什么（回看时还原错选）
   const userAns = new Map();
   function saveStore(){
+    // ⚠️ 关键：答题数据每次都会整体重写，必须把同步凭据原样带回来，
+    //    否则做几道题就会把 GitHub Token / Gist ID / Gitee 配置冲掉，
+    //    导致下次打开要重新输入。
+    const prev = loadStore();
     const data = {
       wrongBook: Array.from(wrongBook.values()).map(v=>({k:v.k,t:v.t,stem:v.stem,answer:v.answer,explain:v.explain||'',ts:v.ts||Date.now(),ua:v.ua||null,formula:v.formula||null})),
       progress: Array.from(progress.entries()).map(([k,v])=>({k,t:v.t,answered:v.answered,correct:v.correct,wrong:v.wrong})),
@@ -26,6 +30,10 @@
       lastIdx: Array.from(lastIdx.entries()),
       favorites: Array.from(favorites.entries()).map(([type,v])=>({type, items:Array.from(v)})),
       userAns: Array.from(userAns.entries()).map(([type,m])=>({type, items:Array.from(m.entries())})),
+      // —— 同步凭据（原样保留，不自增覆盖） ——
+      token: prev.token, gistId: prev.gistId,
+      giteeToken: prev.giteeToken, giteeOwner: prev.giteeOwner,
+      giteeRepo: prev.giteeRepo, giteePath: prev.giteePath,
     };
     localStorage.setItem(STORE_KEY, JSON.stringify(data));
   }
@@ -95,7 +103,7 @@
   const esc = (s)=>{ const d=document.createElement('div'); d.textContent= String(s??''); return d.innerHTML; };
   const qKey = (type, origIdx)=> type+':'+origIdx;
   // 版本号：改功能时递增，用于在页面上确认浏览器加载的是最新文件
-  const APP_VERSION = '20260924b';
+  const APP_VERSION = 'v2.0';
 
   // ---------- 版本检测 / 强制刷新（解决"更新了却看不到新功能"） ----------
   // 原因：Service Worker 或浏览器缓存会返回旧文件，导致新功能不生效。
@@ -394,7 +402,18 @@
     if(T==='judge'){ const v=document.querySelector('input[name=jr]:checked'); return v? v.value==='true':null; }
     return null;
   }
-  function normalize(s){ return String(s??'').trim().replace(/\s+/g,'').toLowerCase(); }
+  // 填空判分归一化：忽略【引号】【括号】【标点】【大小写】【空白】差异
+  // 例：你输入「"交流电流回路断线"」与标准答案「交流电流回路断线」应判为一致
+  //     （加引号只是书写习惯，不应成为判错理由）
+  function normalize(s){
+    return String(s??'')
+      .replace(/\uFF5E/g,'~')                                  // 全角波浪号 ～ → 半角 ~（如 60～500V）
+      .replace(/[\u201c\u201d\u2018\u2019"'«»「」『』`]/g,'')  // 各类引号："" '' 「」『』 «» ` '
+      .replace(/[《》〈〉（）()【】\[\]{}]/g,'')                 // 括号与书名号
+      .replace(/[，,。、；：！？]/g,'')                          // 中文标点（保留 - ～ . 等有意义的符号）
+      .replace(/\s+/g,'')                                      // 所有空白（含全角空格）
+      .toLowerCase();
+  }
 
   // ---------- 🎓 背题模式：直接看答案（不判分、不计错题、不影响进度） ----------
   function showReciteAnswer(){
@@ -1455,6 +1474,44 @@
   })();
   function setSyncMsg(t,kind){ $smsg.textContent=t; $smsg.className='sync-msg '+(kind||''); }
   function persistCreds(token,gistId){ const s=loadStore(); if(token)s.token=token; if(gistId)s.gistId=gistId; localStorage.setItem(STORE_KEY,JSON.stringify(s)); }
+  // ⭐ 输入框实时保存：填完就写进 localStorage，不用等到点了上传/拉取按钮才保存，
+  //    这样下次打开会自动回填，不用重新输入。
+  (function initSyncAutosave(){
+    const fields = [
+      [$token,'token'], [$gid,'gistId'],
+      [$gToken,'giteeToken'], [$gOwner,'giteeOwner'], [$gRepo,'giteeRepo'], [$gPath,'giteePath']
+    ];
+    fields.forEach(([el,key])=>{
+      if(!el) return;
+      const save=()=>{
+        const s=loadStore();
+        s[key]=(el.value||'').trim();
+        localStorage.setItem(STORE_KEY, JSON.stringify(s));
+      };
+      el.addEventListener('input',save);
+      el.addEventListener('change',save);
+      el.addEventListener('blur',save);
+    });
+  })();
+
+  // Token 格式即时自检：填完就提示，避免点了按钮才报 401
+  (function initTokenHint(){
+    if(!$token) return;
+    const check=()=>{
+      const t=($token.value||'').trim();
+      if(!t) return;
+      if(/^github_pat_/.test(t)){
+        setSyncMsg('⚠️ 你填的是 Fine-grained token（github_pat_ 开头），它不支持 Gist 同步。' +
+          '请改生成 classic token：Tokens (classic) → 只勾 gist 权限 → 复制 ghp_ 开头那串。','err');
+      } else if(!/^(ghp_|gho_|ghu_|ghs_|ghr_)/.test(t)){
+        setSyncMsg('⚠️ 这串不像 GitHub classic Token（应以 ghp_ 开头），请确认复制完整、没混入空格。','err');
+      } else {
+        setSyncMsg('');
+      }
+    };
+    $token.addEventListener('blur',check);
+    $token.addEventListener('input',()=>{ /* 输入时不打扰，失焦再校验 */ });
+  })();
   function persistGitee(creds){ const s=loadStore(); Object.assign(s,creds); localStorage.setItem(STORE_KEY,JSON.stringify(s)); }
   function serializeAll(){ return {wrongBook:Array.from(wrongBook.values()), progress:Array.from(progress.entries()).map(([k,v])=>({k,t:v.t,answered:v.answered,correct:v.correct,wrong:v.wrong})),
     perQ:Array.from(perQ.entries()).map(([type,v])=>({type,ok:Array.from(v.ok),err:Array.from(v.err)})),
@@ -1592,6 +1649,33 @@
       if(state.type==='wrongbook') renderWrongBook(); else if(state.type==='favbook') renderFavBook(); else setStats();
     }catch(e){ setSyncMsg('拉取异常：'+e.message,'err'); }
   });
+  // 401/403/404 等状态码 → 说人话的中文诊断，避免只看到数字不知道咋回事
+  function gistErrText(status, token){
+    const t=(token||'').trim();
+    const isFineGrained = /^github_pat_/.test(t);
+    const looksClassic = /^ghp_/.test(t) || /^gho_/.test(t) || /^ghu_/.test(t) || /^ghs_/.test(t) || /^ghr_/.test(t);
+    let base='';
+    if(status===401){
+      base = '❌ 401 未授权：GitHub 不认这个 Token。' +
+        (isFineGrained ? '\n【最可能原因】你用的是 Fine-grained token（github_pat_ 开头），它不支持 Gist API，必须换用 classic token（ghp_ 开头）。'
+                       : '常见原因：① Token 已过期 ② Token 被删除或重新生成过 ③ 复制不完整（少了开头 ghp_ 或末尾字符）');
+    } else if(status===403){
+      base = '❌ 403 禁止访问：多半是 Token 没勾选 gist 权限，或触发了 API 限流（稍等再试）。';
+    } else if(status===404){
+      base = '❌ 404 找不到：Gist ID 不对，或该 Gist 已被删除/属于别人且是 secret（你看不到）。';
+    } else if(status===422){
+      base = '❌ 422 参数错误：Gist ID 格式不对，请检查是否复制完整。';
+    } else {
+      base = '❌ 请求失败：HTTP '+status;
+    }
+    base += '\n👉 处理：去 GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) ' +
+            '→ 重新生成一个，只勾选 gist 权限，完整复制（ghp_ 开头）粘进来。';
+    if(!looksClassic && !isFineGrained && t){
+      base += '\n⚠️ 你填的 Token 不像 classic 格式（应以 ghp_ 开头），请确认复制完整。';
+    }
+    return base;
+  }
+
   $('#syncUpload').addEventListener('click',async ()=>{
     const token=$token.value.trim(); if(!token){setSyncMsg('请先填写 GitHub Token（需 gist 权限）','err');return;}
     const body={description:'电工技能大赛理论题库 · 同步数据（自动生成）',public:false,files:{'dianong_tiku_sync.json':{content:JSON.stringify(serializeAll(),null,2)}}};
@@ -1599,14 +1683,14 @@
       let res, json, id=$gid.value.trim();
       if(id){ res=await gistReq(token,'/gists/'+id,{method:'PATCH',body:JSON.stringify({files:body.files})}); }
       else { res=await gistReq(token,'/gists',{method:'POST',body:JSON.stringify(body)}); }
-      if(!res.ok){ setSyncMsg('上传失败：'+res.status+' '+await res.text().catch(()=>''),'err'); return; }
+      if(!res.ok){ setSyncMsg(gistErrText(res.status, token),'err'); return; }
       json=await res.json(); persistCreds(token,json.id); $gid.value=json.id; setSyncMsg('✅ 已上传到 Gist（ID：'+json.id+'），其他设备填此 ID 即可拉取同步。','ok');
     }catch(e){ setSyncMsg('上传异常：'+e.message,'err'); }
   });
   $('#syncDownload').addEventListener('click',async ()=>{
     const token=$token.value.trim(), id=$gid.value.trim(); if(!token||!id){setSyncMsg('请先填写 Token 与 Gist ID','err');return;}
     try{
-      const res=await gistReq(token,'/gists/'+id); if(!res.ok){setSyncMsg('拉取失败：'+res.status,'err');return;}
+      const res=await gistReq(token,'/gists/'+id); if(!res.ok){setSyncMsg(gistErrText(res.status, token),'err');return;}
       const json=await res.json(); const file=json.files&&json.files['dianong_tiku_sync.json']; if(!file){setSyncMsg('该 Gist 无同步数据文件','err');return;}
       applyRemote(JSON.parse(file.content)); setSyncMsg('✅ 已从 Gist 拉取并合并到本地（错题本 '+wrongBook.size+' 道）。','ok');
       if(state.type==='wrongbook') renderWrongBook(); else if(state.type==='favbook') renderFavBook(); else setStats();

@@ -144,7 +144,10 @@
   .sync-row input{flex:1;min-width:180px;}
   .sync-tip{font-size:12px;color:var(--muted);line-height:1.6;margin-top:6px;}
   .sync-msg{font-size:13px;margin-top:6px;min-height:16px;}
-  .sync-msg.ok{color:var(--ok);} .sync-msg.err{color:var(--err);}
+  .sync-msg.ok{color:var(--ok);}
+  /* 同步失败的多行诊断文案：保留换行、左对齐、加浅色底衬便于阅读 */
+  .sync-msg.err{color:var(--err);white-space:pre-wrap;text-align:left;line-height:1.7;
+    background:#fff5f5;border:1px solid #f3c2c2;border-radius:8px;padding:8px 10px;}
   .tab.badge::after{content:attr(data-count);display:inline-block;background:var(--err);color:#fff;font-size:10px;
     border-radius:99px;padding:0 6px;margin-left:6px;vertical-align:middle;display:none;}
   .tab.badge.has::after{display:inline-block;}
@@ -357,8 +360,8 @@
 <div class="footer">提示：本软件为离线练习工具，数据来源于《理论试题库》与《实操任务书》，供赛前自学使用。<br>
 <span id="verTag" style="color:#c0392b;font-weight:700;">版本加载中…</span>　（看不到「📝组卷」标签时，请点此版本号强制刷新）</div>
 
-<script src="data.js?v=20260924b"></script>
-<script src="app.js?v=20260924b"></script>
+<script src="data.js?v=v2.0"></script>
+<script src="app.js?v=v2.0"></script>
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
